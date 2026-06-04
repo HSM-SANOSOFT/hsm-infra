@@ -1,6 +1,10 @@
 volumes:
   stalwart_data:
   stalwart_etc:
+  bulwark-settings:
+  bulwark-admin:
+  bulwark-admin-state:
+  bulwark-telemetry:
 
 networks:
   email_network:
@@ -26,4 +30,40 @@ services:
       - 8080:8080
     networks:
       - email_network
+    restart: unless-stopped
+
+  bulwart:
+    image: ghcr.io/bulwarkmail/webmail:latest
+    container_name: bulwart
+    volumes:
+      - bulwark-settings:/app/data/settings
+      - bulwark-admin:/app/data/admin
+      - bulwark-admin-state:/app/data/admin-state
+      - bulwark-telemetry:/app/data/telemetry
+    ports:
+      - 3000:3000
+    networks:
+      - email_network
+    environment:
+      - HOSTNAME=0.0.0.0
+      - PORT=3000
+      - APP_NAME=Bulwark Webmail
+      - JMAP_SERVER=https://mail.hospitalsm.net
+      - STALWART_FEATURES=true
+      - LOGING_COMPANY_NAME=Bulwark Mail
+      - LOGGING_WEBSITE_URL=https://bulwarkmail.com
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://127.0.0.1:3000/api/health",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     restart: unless-stopped
