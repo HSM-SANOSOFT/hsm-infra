@@ -5,12 +5,37 @@ volumes:
   bulwark-admin:
   bulwark-admin-state:
   bulwark-telemetry:
+  traefik_letsencrypt:
 
 networks:
   email_network:
     driver: bridge
 
 services:
+  traefik:
+    image: traefik:v3.3
+    container_name: traefik
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --certificatesresolvers.le.acme.httpchallenge=true
+      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
+      - --certificatesresolvers.le.acme.email=[email protected]
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_letsencrypt:/letsencrypt
+    networks:
+      - email_network
+    restart: unless-stopped
+
   stalwart:
     image: stalwartlabs/stalwart:v0.16
     container_name: stalwart
@@ -18,32 +43,37 @@ services:
       - stalwart_data:/var/lib/stalwart
       - stalwart_etc:/etc/stalwart
     ports:
+      # mail protocols stay published directly — NOT through Traefik
       - 25:25
       - 110:110
       - 143:143
-      - 443:443
       - 465:465
       - 587:587
       - 993:993
       - 995:995
       - 4190:4190
-      - 8080:8080
+      # note: 443 and 8080 are NO LONGER published to the host;
+      # Traefik reaches :8080 over the internal network
     networks:
       - email_network
     environment:
-      - STALWART_PUBLIC_URL=mail.hospitalsm.net
+      - STALWART_PUBLIC_URL=https://mail.hospitalsm.net   # scheme required
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.stalwart.rule=Host(`mail.hospitalsm.net`)
+      - traefik.http.routers.stalwart.entrypoints=websecure
+      - traefik.http.routers.stalwart.tls.certresolver=le
+      - traefik.http.services.stalwart.loadbalancer.server.port=8080
     restart: unless-stopped
 
-  bulwart:
+  bulwark:
     image: ghcr.io/bulwarkmail/webmail:latest
-    container_name: bulwart
+    container_name: bulwark
     volumes:
       - bulwark-settings:/app/data/settings
       - bulwark-admin:/app/data/admin
       - bulwark-admin-state:/app/data/admin-state
       - bulwark-telemetry:/app/data/telemetry
-    ports:
-      - 3000:3000
     networks:
       - email_network
     environment:
@@ -52,16 +82,14 @@ services:
       - APP_NAME=Bulwark Webmail
       - JMAP_SERVER_URL=https://mail.hospitalsm.net
       - STALWART_FEATURES=true
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.bulwark.rule=Host(`webmail.hospitalsm.net`)
+      - traefik.http.routers.bulwark.entrypoints=websecure
+      - traefik.http.routers.bulwark.tls.certresolver=le
+      - traefik.http.services.bulwark.loadbalancer.server.port=3000
     healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
-          "http://127.0.0.1:3000/api/health",
-        ]
+      test: ["CMD","wget","--no-verbose","--tries=1","--spider","http://127.0.0.1:3000/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3
