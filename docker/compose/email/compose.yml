@@ -30,6 +30,8 @@ services:
       - 8080:8080
     networks:
       - email_network
+    environment:
+      - STALWART_PUBLIC_URL=mail.hospitalsm.net
     restart: unless-stopped
 
   bulwart:
@@ -48,10 +50,8 @@ services:
       - HOSTNAME=0.0.0.0
       - PORT=3000
       - APP_NAME=Bulwark Webmail
-      - JMAP_SERVER=https://mail.hospitalsm.net
+      - JMAP_SERVER_URL=https://mail.hospitalsm.net
       - STALWART_FEATURES=true
-      - LOGING_COMPANY_NAME=Bulwark Mail
-      - LOGGING_WEBSITE_URL=https://bulwarkmail.com
     healthcheck:
       test:
         [
