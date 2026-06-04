@@ -19,7 +19,7 @@ services:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --api.dashboard=true
-      - --api.insecure=true            # dashboard on :8080, no auth — keep it bound to localhost below
+      - --api.insecure=true # dashboard on :8080, no auth — keep it bound to localhost below
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
@@ -31,7 +31,7 @@ services:
     ports:
       - 80:80
       - 443:443
-      - 127.0.0.1:8080:8080          # Traefik dashboard, localhost-only (SSH tunnel to reach)
+      - 127.0.0.1:8080:8080 # Traefik dashboard, localhost-only (SSH tunnel to reach)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik_letsencrypt:/letsencrypt
@@ -55,7 +55,7 @@ services:
       - 993:993
       - 995:995
       - 4190:4190
-      - 8081:8080          # Stalwart admin (plaintext), localhost-only; HTTPS admin is via mail.hospitalsm.net
+      - 8081:8080 # Stalwart admin (plaintext), localhost-only; HTTPS admin is via mail.hospitalsm.net
     networks:
       - email_network
     environment:
@@ -76,6 +76,8 @@ services:
       - bulwark-admin:/app/data/admin
       - bulwark-admin-state:/app/data/admin-state
       - bulwark-telemetry:/app/data/telemetry
+    ports:
+      - 8082:3000 # Bulwark webmail, localhost-only;
     networks:
       - email_network
     environment:
@@ -91,7 +93,15 @@ services:
       - traefik.http.routers.bulwark.tls.certresolver=le
       - traefik.http.services.bulwark.loadbalancer.server.port=3000
     healthcheck:
-      test: ["CMD","wget","--no-verbose","--tries=1","--spider","http://127.0.0.1:3000/api/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://127.0.0.1:3000/api/health",
+        ]
       interval: 30s
       timeout: 5s
       retries: 3
