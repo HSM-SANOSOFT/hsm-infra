@@ -29,6 +29,7 @@ services:
     ports:
       - 80:80
       - 443:443
+      - 8081:8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik_letsencrypt:/letsencrypt
@@ -57,7 +58,7 @@ services:
     networks:
       - email_network
     environment:
-      - STALWART_PUBLIC_URL=https://mail.hospitalsm.net   # scheme required
+      - STALWART_PUBLIC_URL=https://mail.hospitalsm.net # scheme required
     labels:
       - traefik.enable=true
       - traefik.http.routers.stalwart.rule=Host(`mail.hospitalsm.net`)
@@ -89,7 +90,15 @@ services:
       - traefik.http.routers.bulwark.tls.certresolver=le
       - traefik.http.services.bulwark.loadbalancer.server.port=3000
     healthcheck:
-      test: ["CMD","wget","--no-verbose","--tries=1","--spider","http://127.0.0.1:3000/api/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://127.0.0.1:3000/api/health",
+        ]
       interval: 30s
       timeout: 5s
       retries: 3
