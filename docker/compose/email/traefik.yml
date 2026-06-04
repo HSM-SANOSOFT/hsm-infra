@@ -1,0 +1,84 @@
+global:
+  checkNewVersion: true
+  sendAnonymousUsage: false
+
+api:
+  dashboard: true
+  insecure: true
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      keyType: EC256
+      email: rsantamariao@hospitalsantamaria.com.ec
+      storage: /etc/certs/acme.json
+      dnsChallenge:
+        provider: digitalocean
+
+entryPoints:
+  web:
+    address: :80
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: :443
+    http:
+      tls:
+        certResolver: letsencrypt
+        domains:
+          - main: "hospitalsm.net"
+            sans:
+              - "*.hospitalsm.net"
+
+  smtp:
+    address: :25
+    proxyProtocol:
+      trustedIPs:
+        - 172.20.0.0/16
+  submission:
+    address: :587
+    proxyProtocol:
+      trustedIPs:
+        - 172.20.0.0/16
+  smtps:
+    address: :465
+    proxyProtocol:
+      trustedIPs:
+        - 172.20.0.0/16
+  imap:
+    address: :143
+    proxyProtocol:
+      trustedIPs:
+        - 172.20.0.0/16
+  imaps:
+    address: :993
+    proxyProtocol:
+      trustedIPs:
+        - 172.20.0.0/16
+  pop3:
+    address: :110
+    proxyProtocol:
+      trustedIPs:
+        - 172.20.0.0/16
+  pop3s:
+    address: :995
+    proxyProtocol:
+      trustedIPs:
+        - 172.20.0.0/16
+  managesieve:
+    address: :4190
+    proxyProtocol:
+      trustedIPs:
+        - 172.20.0.0/16
+
+tls:
+  options:
+    default:
+      minVersion: VersionTLS12
+
+providers:
+  docker:
+    exposedByDefault: false
