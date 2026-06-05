@@ -144,6 +144,7 @@ services:
       - 8082:3000 # webmail (plaintext — Traefik handles TLS)
     networks:
       - email_network
+    env_file: .env
     environment:
       - HOSTNAME=0.0.0.0
       - PORT=3000
