@@ -33,46 +33,28 @@ entryPoints:
             sans:
               - "*.hospitalsm.net"
 
+  # NOTE: entrypoints are the PUBLIC edge — they must NOT expect an inbound
+  # PROXY header (no upstream LB sends one). The PROXY header we want is
+  # Traefik -> Stalwart, set per-service via
+  # traefik.tcp.services.<name>.loadbalancer.proxyProtocol.version=2 in compose.yml.
+  # Adding proxyProtocol here made the server-first SMTP handshake deadlock
+  # ~60s waiting for a PROXY header clients never send.
   smtp:
     address: :25
-    proxyProtocol:
-      trustedIPs:
-        - 172.20.0.0/16
   submission:
     address: :587
-    proxyProtocol:
-      trustedIPs:
-        - 172.20.0.0/16
   smtps:
     address: :465
-    proxyProtocol:
-      trustedIPs:
-        - 172.20.0.0/16
   imap:
     address: :143
-    proxyProtocol:
-      trustedIPs:
-        - 172.20.0.0/16
   imaps:
     address: :993
-    proxyProtocol:
-      trustedIPs:
-        - 172.20.0.0/16
   pop3:
     address: :110
-    proxyProtocol:
-      trustedIPs:
-        - 172.20.0.0/16
   pop3s:
     address: :995
-    proxyProtocol:
-      trustedIPs:
-        - 172.20.0.0/16
   managesieve:
     address: :4190
-    proxyProtocol:
-      trustedIPs:
-        - 172.20.0.0/16
 
 tls:
   options:
